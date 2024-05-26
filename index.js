@@ -24,7 +24,7 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use('/gpt', gptRoute);
+app.use('/', gptRoute);
 app.use('/bd', bdRoute);
 
 
