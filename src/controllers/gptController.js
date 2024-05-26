@@ -149,6 +149,7 @@ class GptController {
       res.json({ response: messages_response.data[0].content[0].text.value });
     } catch (error) {
       console.error(error);
+      res.status(500).json(error);
     }
   }
 
