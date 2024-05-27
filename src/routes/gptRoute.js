@@ -12,6 +12,8 @@ gptRoute.delete('/thread/:leadID', GptController.deleteThread);
 
 gptRoute.post('/:assistant_id/message', GptController.generateMessage);
 
+gptRoute.post('/message', GptController.promptMessage);
+
 gptRoute.get('/:leadID/message/list', GptController.listMessages);
 
 module.exports = gptRoute;

@@ -7,4 +7,5 @@
 |POST http://localhost:{PORT}/audio|{ input: string }|none|
 |DELETE http://localhost:{PORT}/:leadID|none|leadID = Id do Lead vindo do Kommo|
 |POST http://localhost:{PORT}/:assistant_id/message|{ text: string, leadID: string }|assistant_id = Id do assistente GPT codificado em base 64|
+|POST http://localhost:{PORT}/message|{ text: string }|none|
 |GET http://localhost:{PORT}/:leadID/message/list|none|leadID = Id do Lead vindo do Kommo|

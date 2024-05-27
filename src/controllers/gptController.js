@@ -146,7 +146,28 @@ class GptController {
         existThreads.threadID[indexOfAssistant]
       );
 
-      res.json({ response: messages_response.data[0].content[0].text.value });
+      res.json({ message: messages_response.data[0].content[0].text.value });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json(error);
+    }
+  }
+
+  async promptMessage(req, res) {
+    const { text } = req.body;
+    
+    try {
+      const completions = await openai.chat.completions.create({
+        messages: [
+          {
+            role: 'user',
+            content: text
+          }
+        ],
+        model: 'gpt-3.5-turbo-1106'
+      })
+
+      res.json({message: completions.choices[0].message.content});
     } catch (error) {
       console.error(error);
       res.status(500).json(error);
