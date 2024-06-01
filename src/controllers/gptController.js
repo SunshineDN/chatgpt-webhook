@@ -231,30 +231,6 @@ class GptController {
     }
   }
 
-  async generateText(req, res) {
-    const { message } = req.body;
-
-    try {
-      const { data } = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'user',
-            content: message
-          }
-        ]
-      }, {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        }
-      });
-
-      res.json(data);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   async audioToText(req, res) {
     const { audio_link, lead_id } = req.body;
 
@@ -307,6 +283,30 @@ class GptController {
     } catch (error) {
       console.error("Error", error.message);
       res.status(500).json(error);
+    }
+  }
+
+  async generateText(req, res) {
+    const { message } = req.body;
+
+    try {
+      const { data } = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: message
+          }
+        ]
+      }, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      });
+
+      res.json(data);
+    } catch (error) {
+      console.error(error);
     }
   }
 }
