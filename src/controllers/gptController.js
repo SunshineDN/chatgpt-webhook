@@ -280,7 +280,6 @@ class GptController {
 
   async textToAudio(req, res) {
     const { message, phone } = req.body;
-    // const speechFile = path.resolve("./public/speech.mp3");
     const URL = "https://new-api.zapsterapi.com/v1/wa/messages";
     const headers = {
       'accept': 'application/json',
@@ -303,12 +302,7 @@ class GptController {
       const buffer = Buffer.from(await mp3.arrayBuffer());
       data.media.base64 = buffer.toString('base64');
 
-      //Send audio to zapster
       await axios.post(URL, data, { headers });
-      // console.log(speechFile);
-      // const buffer = Buffer.from(await mp3.arrayBuffer());
-      // await fs.promises.writeFile(speechFile, buffer);
-      // console.log('File written');
       res.json({ message: 'Audio sent' });
     } catch (error) {
       console.error("Error", error.message);
