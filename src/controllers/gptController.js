@@ -1,6 +1,4 @@
 require('dotenv').config();
-const path = require('path');
-const fs = require('fs');
 const axios = require('axios');
 const OpenAI = require('openai');
 const { downloadAudio, deleteTempFile } = require('../services/DaD-Audio');
