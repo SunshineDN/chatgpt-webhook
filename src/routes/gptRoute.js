@@ -6,7 +6,9 @@ gptRoute.get('/', GptController.index);
 
 gptRoute.post('/text', GptController.generateText);
 
-gptRoute.post('/audio', GptController.generateAudio);
+gptRoute.post('/audio-to-text', GptController.audioToText);
+
+gptRoute.post('/text-to-audio', GptController.textToAudio);
 
 gptRoute.delete('/thread/:leadID', GptController.deleteThread);
 

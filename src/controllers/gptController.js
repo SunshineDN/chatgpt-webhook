@@ -5,6 +5,7 @@ const axios = require('axios');
 const OpenAI = require('openai');
 const LeadThread = require('../models/LeadThread');
 const { Op } = require('sequelize');
+const { Readable } = require('stream');
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
@@ -12,7 +13,8 @@ class GptController {
   constructor() {
     this.index = this.index.bind(this);
     this.generateText = this.generateText.bind(this);
-    this.generateAudio = this.generateAudio.bind(this);
+    this.textToAudio = this.textToAudio.bind(this);
+    this.audioToText = this.audioToText.bind(this);
     this.createThread = this.createThread.bind(this);
     this.generateMessage = this.generateMessage.bind(this);
   }
@@ -79,7 +81,7 @@ class GptController {
         return;
       }
     } catch (error) {
-      throw new Error(error);      
+      throw new Error(error);
     }
   }
 
@@ -88,6 +90,8 @@ class GptController {
     const { assistant_id } = req.params;
 
     const { decode } = require('base-64');
+
+    console.log('Texto recebido do usuário:'.magenta.bold, text);
 
     const assistant = decode(assistant_id);
 
@@ -118,7 +122,7 @@ class GptController {
 
       const indexOfAssistant = existThreads.assistant_id.indexOf(assistant);
       console.log('Index of assistant'.magenta.bold, indexOfAssistant);
-      
+
       console.log('Sending message to assistant'.magenta.bold);
       await openai.beta.threads.messages.create(
         existThreads.threadID[indexOfAssistant],
@@ -155,7 +159,7 @@ class GptController {
 
   async promptMessage(req, res) {
     const { text } = req.body;
-    
+
     try {
       const completions = await openai.chat.completions.create({
         messages: [
@@ -167,7 +171,7 @@ class GptController {
         model: 'gpt-3.5-turbo-1106'
       })
 
-      res.json({message: completions.choices[0].message.content});
+      res.json({ message: completions.choices[0].message.content });
     } catch (error) {
       console.error(error);
       res.status(500).json(error);
@@ -250,7 +254,28 @@ class GptController {
     }
   }
 
-  async generateAudio(req, res) {
+  async audioToText(req, res) {
+    const { audio } = req.body;
+
+    try {
+      console.log('Audio received'.magenta.bold, audio);
+      const { data } = await axios.get(audio, {
+        responseType: 'arraybuffer'
+      });
+
+      const transcription = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(data),
+        model: 'whisper-1',
+      });
+
+      res.json(transcription);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json(error);
+    }
+  }
+
+  async textToAudio(req, res) {
     const { input } = req.body;
     const speechFile = path.resolve("./public/speech.mp3");
 
