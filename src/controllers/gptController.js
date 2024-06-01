@@ -3,9 +3,10 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const OpenAI = require('openai');
+const { downloadAudio, deleteTempFile } = require('../services/DaD-Audio');
 const LeadThread = require('../models/LeadThread');
 const { Op } = require('sequelize');
-const { Readable } = require('stream');
+const transcribeAudio = require('../services/TranscribeAudio');
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
@@ -255,20 +256,22 @@ class GptController {
   }
 
   async audioToText(req, res) {
-    const { audio } = req.body;
+    const { audio_link, lead_id } = req.body;
 
     try {
-      console.log('Audio received'.magenta.bold, audio);
-      const { data } = await axios.get(audio, {
-        responseType: 'arraybuffer'
-      });
+      console.log('Downloading audio...'.magenta.bold);
+      await downloadAudio(audio_link, lead_id);
+      console.log('Success\n'.green.bold);
 
-      const transcription = await openai.audio.transcriptions.create({
-        file: fs.createReadStream(data),
-        model: 'whisper-1',
-      });
+      console.log('Transcribing audio...'.magenta.bold);
+      const transcription = await transcribeAudio(lead_id);
+      console.log('Success\n'.green.bold);
 
-      res.json(transcription);
+      console.log('Deleting temporary file...'.magenta.bold);
+      await deleteTempFile(lead_id);
+      console.log('Success\n'.green.bold);
+
+      res.json({ message: transcription });
     } catch (error) {
       console.error(error);
       res.status(500).json(error);
@@ -276,23 +279,40 @@ class GptController {
   }
 
   async textToAudio(req, res) {
-    const { input } = req.body;
-    const speechFile = path.resolve("./public/speech.mp3");
+    const { message, phone } = req.body;
+    // const speechFile = path.resolve("./public/speech.mp3");
+    const URL = "https://new-api.zapsterapi.com/v1/wa/messages";
+    const headers = {
+      'accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.API_KEY_ZAPSTER}`
+    };
+    const data = {
+      media: {ptt: true, base64: null},
+      instance_id: process.env.INSTANCE_ID_ZAPSTER,
+      recipient: phone
+    };
 
     try {
       const mp3 = await openai.audio.speech.create({
         'model': 'tts-1',
         'voice': 'nova',
-        'input': input
+        'input': message
       });
 
-      console.log(speechFile);
       const buffer = Buffer.from(await mp3.arrayBuffer());
-      await fs.promises.writeFile(speechFile, buffer);
-      console.log('File written');
-      res.sendFile(speechFile);
+      data.media.base64 = buffer.toString('base64');
+
+      //Send audio to zapster
+      await axios.post(URL, data, { headers });
+      // console.log(speechFile);
+      // const buffer = Buffer.from(await mp3.arrayBuffer());
+      // await fs.promises.writeFile(speechFile, buffer);
+      // console.log('File written');
+      res.json({ message: 'Audio sent' });
     } catch (error) {
-      console.error(error);
+      console.error("Error", error.message);
+      res.status(500).json(error);
     }
   }
 }

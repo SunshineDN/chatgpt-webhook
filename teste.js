@@ -2,61 +2,72 @@ require('dotenv').config();
 const fs = require('fs');
 const axios = require('axios');
 const OpenAI = require('openai');
-const { Readable, Transform } = require('stream');
-const FormData = require('form-data');
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
-const getAudioFromUrl = async (url) => {
-  const response = await axios.get(url, { responseType: 'arraybuffer' });
-  // return Buffer.from(response.data, 'binary');
-  return response.data;
+const downloadAudio = async (url, fileId) => {
+  const response = await axios.get(url, {
+    responseType: 'stream'
+  });
+
+  const writer = fs.createWriteStream(`./public/files/${fileId}.m4a`);
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+  });
+};
+
+const deleteTempFile = async (fileId) => {
+  fs.unlinkSync(`./public/files/${fileId}.m4a`, (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log('Temporary file deleted');
+    }
+  });
+};
+
+const transcribeAudio = async (fileId) => {
+  const file = fs.createReadStream(`./public/files/${fileId}.m4a`);
+  const transcription = await openai.audio.transcriptions.create({
+    file: file,
+    model: 'whisper-1',
+  });
+
+  return transcription.text;
 }
 
-const getAudioFile = (path) => {
-  return fs.createReadStream(path);
-}
-
-
-const getAudios = async () => {
-  const audio1 = await getAudioFromUrl('https://drive-g.kommo.com/download/db5312af-76e1-5627-8480-08ee664ba18a/173091e5-0ac5-469a-b92d-e4a179517556/d9a7161c-6ca9-4268-8e9b-e4e5c1364bcd/data.m4a');
-  const audio2 = getAudioFile('./public/files/aud.mp3');
-
-  return {
-    audioBuffer: audio1,
-    audioFile: audio2
-  }
-}
-
-const sendAudioToGpt = async () => {
-
+const main = async () => {
   try {
-    const audio = await getAudios();
-    const buffer = Buffer.from(audio.audioBuffer);
-    console.log("Buffer: ", buffer);
+    console.log('Starting...');
+    console.log('Downloading audio...');
+    const audio = await downloadAudio('https://drive-g.kommo.com/download/db5312af-76e1-5627-8480-08ee664ba18a/173091e5-0ac5-469a-b92d-e4a179517556/d9a7161c-6ca9-4268-8e9b-e4e5c1364bcd/data.m4a', 123123);
 
-    const form = new FormData();
+    console.log('Transcribing audio...');
+    const transcription = await transcribeAudio(123123);
 
-    // const readableStream = new Readable();
-    // readableStream.push(buffer);
-    // readableStream.push(null);
+    console.log('Transcription:', transcription);
 
-    form.append('file', buffer, {
-      filename: 'audio.mp3',
-      contentType: 'audio/mpeg',
-    });
+    console.log('Deleting temporary file...');
+    await deleteTempFile(123123);
 
-    console.dir(form, { depth: null });
-
-    const transcriptions = openai.audio.transcriptions.create({
-      file: form,
-      model: "whisper-1",
-    });
-
+    console.log('Done');
     return
   } catch (e) {
     console.error(e);
   }
 }
 
-sendAudioToGpt();
+const data = {
+  teste: 1,
+  oi: {
+    teste: 2,
+    teste3: null,
+  }
+}
+
+data.oi.teste3 = 3;
+console.log(data)
+// main();
