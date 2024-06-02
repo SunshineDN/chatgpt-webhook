@@ -1,8 +1,8 @@
 const fs = require("fs");
 const openai = require("./AuthenticateOpenAI");
 
-const transcribeAudio = async (fileId) => {
-  const file = fs.createReadStream(`./public/files/${fileId}.m4a`);
+const transcribeAudio = async (fileObj) => {
+  const file = fs.createReadStream(`./public/files/${fileObj.name}.${fileObj.extension}`);
   const transcription = await openai.audio.transcriptions.create({
     file: file,
     model: 'whisper-1',

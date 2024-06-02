@@ -1,12 +1,12 @@
 const axios = require("axios");
 const fs = require("fs");
 
-const downloadAudio = async (url, fileId) => {
-  const response = await axios.get(url, {
+const downloadAudio = async (file) => {
+  const response = await axios.get(file.url, {
     responseType: 'stream'
   });
 
-  const writer = fs.createWriteStream(`./public/files/${fileId}.m4a`);
+  const writer = fs.createWriteStream(`./public/files/${file.name}.${file.extension}`);
   response.data.pipe(writer);
 
   return new Promise((resolve, reject) => {
@@ -15,8 +15,8 @@ const downloadAudio = async (url, fileId) => {
   });
 };
 
-const deleteTempFile = async (fileId) => {
-  fs.unlinkSync(`./public/files/${fileId}.m4a`, (err) => {
+const deleteTempFile = async (file) => {
+  fs.unlinkSync(`./public/files/${file.name}.${file.extension}`, (err) => {
     if (err) {
       console.error(err);
     } else {

@@ -5,6 +5,7 @@ const { downloadAudio, deleteTempFile } = require('../services/DaD-Audio');
 const LeadThread = require('../models/LeadThread');
 const { Op } = require('sequelize');
 const transcribeAudio = require('../services/TranscribeAudio');
+const getFileNameFromUrl = require('../utils/GetNameExtension');
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
@@ -232,17 +233,21 @@ class GptController {
   async audioToText(req, res) {
     const { audio_link, lead_id } = req.body;
 
+    if (!audio_link || !lead_id) return res.status(400).json({ message: 'Missing parameters' });
+
+    const fileObj = getFileNameFromUrl(audio_link, lead_id);
+
     try {
       console.log('Downloading audio...'.magenta.bold);
-      await downloadAudio(audio_link, lead_id);
+      await downloadAudio(fileObj);
       console.log('Success\n'.green.bold);
 
       console.log('Transcribing audio...'.magenta.bold);
-      const transcription = await transcribeAudio(lead_id);
+      const transcription = await transcribeAudio(fileObj);
       console.log('Success\n'.green.bold);
 
       console.log('Deleting temporary file...'.magenta.bold);
-      await deleteTempFile(lead_id);
+      await deleteTempFile(fileObj);
       console.log('Success\n'.green.bold);
 
       res.json({ message: transcription });
@@ -254,6 +259,9 @@ class GptController {
 
   async textToAudio(req, res) {
     const { message, phone } = req.body;
+
+    if(!message || !phone) return res.status(400).json({ message: 'Missing parameters' });
+
     const URL = "https://new-api.zapsterapi.com/v1/wa/messages";
     const headers = {
       'accept': 'application/json',
